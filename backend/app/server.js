@@ -1,20 +1,24 @@
-// IMPORTS
 const express = require('express');
 const bcrypt = require('bcrypt');
 const { addUser, getUsers } = require('../db/Users');
 const app = express();
 const PORT = 8080; 
+const http = require('http-status-codes');
+const jwt = require("jsonwebtoken");
+
 const passport = require('passport');
 const initializePassport = require('../config/passport-config');
 const flash = require('express-flash');
 const session = require('express-session');
 const uniqueId = require('uuid').v4;
+const { generateAccessToken, generateRefreshToken } = require('../utils/helperFunction');
+const { authenticateToken } = require('../middlewares/authenticateToken');
+let refreshTokens = [];
 
 if(process.env.NODE_ENV !== 'production') {
 	require('dotenv').config();
 }
 
-// MIDDLEWARE
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }))
 app.use(flash());
@@ -22,18 +26,35 @@ app.use( session({ secret: process.env.SESSION_SECRET, resave: false, saveUninit
 app.use(passport.initialize());
 app.use(passport.session());
 
+
 initializePassport( passport,
 	(email) => getUsers().find((user) => user.email === email),
 	(id) => getUsers().find((user) => user.id === id)
 );
 
+app.post("/token", (req, res) => {
+	const refreshToken = req.body.token;
 
-// ROUTES
+	if (refreshToken == null) 
+		return res.status(http.StatusCodes.UNAUTHORIZED).json({ message: "refresh token is missing" });
+
+	if (!refreshTokens.includes(refreshToken)) 
+		return res.status(http.StatusCodes.FORBIDDEN).json({ message: "Invalid refresh token." });
+
+	jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, (err, user) => {
+		if (err) 
+			return res.status(http.StatusCodes.FORBIDDEN).json({ message: "Invalid refresh token." });
+
+		const accessToken = generateAccessToken({ email: user.email });
+		res.status(http.StatusCodes.OK).json({ accessToken: accessToken });
+	});
+});
+
 app.post('/register', async(req, res) => {
 	const user = getUsers().find((user) => user.email === req.body.email);
 	
 	if(user) {
-		res.status(400).send('User already exists');
+		res.status(http.StatusCodes.NOT_ACCEPTABLE).json({ message: 'User already exists'});
 		return;
 	}
 	
@@ -47,21 +68,33 @@ app.post('/register', async(req, res) => {
 			}
 		)
 	}).then(() => {	
-		res.status(200).send('User created');
+		res.status(http.StatusCodes.OK).json({ message: 'User created'});
 	})
 	.catch(() => {
-		res.status(500).send('User registration failed!');
+		res.status(http.StatusCodes.INTERNAL_SERVER_ERROR).json({ message: 'User registration failed!' });
 	});
 
 });
 
 app.post('/login', passport.authenticate('local'), (req, res) => {
-	res.status(200).send('User logged in');
+	const email = req.body.email;
+	const user = getUsers().find((user) => user.email === email);
+  
+	const accessToken = generateAccessToken({ email: user.email });
+	const refreshToken = generateRefreshToken({ email: user.email });
+	refreshTokens.push(refreshToken);
+	res.status(http.StatusCodes.OK).json({ name: user.name, email: user.email, accessToken: accessToken, refreshToken: refreshToken });
 });
 
 app.delete('/logout', (req, res) => {
 	req.logOut();  
-	res.status(200).send('User logged out');
+	refreshTokens = refreshTokens.filter((token) => token !== req.body.token);
+	res.status(http.StatusCodes.OK).json({ message: 'User logged out' });
+});
+
+// Test route
+app.get('/users', authenticateToken, (req, res) => {
+	res.json(getUsers());
 });
 
 app.listen(PORT, () => {
