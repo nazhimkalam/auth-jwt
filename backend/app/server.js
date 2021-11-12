@@ -92,7 +92,6 @@ app.delete('/logout', (req, res) => {
 	res.status(http.StatusCodes.OK).json({ message: 'User logged out' });
 });
 
-// Test route
 app.get('/users', authenticateToken, (req, res) => {
 	res.json(getUsers());
 });

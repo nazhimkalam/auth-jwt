@@ -1,4 +1,3 @@
-// This file is used to replicate the database but is not used in the application
 const users = [];
 
 const addUser = (user) => {
