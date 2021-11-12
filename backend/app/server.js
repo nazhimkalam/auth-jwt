@@ -5,6 +5,7 @@ const app = express();
 const PORT = 8080; 
 const http = require('http-status-codes');
 const jwt = require("jsonwebtoken");
+const cors = require('cors');
 
 const passport = require('passport');
 const initializePassport = require('../config/passport-config');
@@ -25,6 +26,7 @@ app.use(flash());
 app.use( session({ secret: process.env.SESSION_SECRET, resave: false, saveUninitialized: false }) );
 app.use(passport.initialize());
 app.use(passport.session());
+app.use(cors());
 
 
 initializePassport( passport,
@@ -83,7 +85,7 @@ app.post('/login', passport.authenticate('local'), (req, res) => {
 	const accessToken = generateAccessToken({ email: user.email });
 	const refreshToken = generateRefreshToken({ email: user.email });
 	refreshTokens.push(refreshToken);
-	res.status(http.StatusCodes.OK).json({ name: user.name, email: user.email, accessToken: accessToken, refreshToken: refreshToken });
+	res.status(http.StatusCodes.OK).json({ name: user.name, email: user.email, accessToken: accessToken, refreshToken: refreshToken, expiresAt: 10000 });
 });
 
 app.delete('/logout', (req, res) => {
@@ -93,7 +95,7 @@ app.delete('/logout', (req, res) => {
 });
 
 app.get('/users', authenticateToken, (req, res) => {
-	res.json(getUsers());
+	res.json(getUsers().map((user) => ({ name: user.name, email: user.email })));
 });
 
 app.listen(PORT, () => {
