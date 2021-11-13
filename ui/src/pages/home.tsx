@@ -19,9 +19,7 @@ const Home = () => {
 
   useEffect(() => {
     axios
-      .get("http://localhost:8080/users", {
-        headers: { Authorization: `Bearer ${Cookies.get("accessToken")}` },
-      })
+      .get("http://localhost:8080/users", { headers: { Authorization: `Bearer ${Cookies.get("accessToken")}` }, })
       .then((response) => {
         setRegisteredUsers(response.data);
       })
