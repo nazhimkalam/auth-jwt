@@ -48,7 +48,7 @@ const Register = () => {
                 <input type="text" name="email" placeholder="Email" onChange={e => onChangeEmail(e.target.value)} required/> <br />
                 <input type="password" name="password" placeholder="Password" onChange={e => onChangePassword(e.target.value)} required/> <br />
                 <button type="submit">Submit</button> <br />
-                <Link to="/">Go to login</Link>
+                <Link to="/login">Go to login</Link>
             </form>
             <ToastContainer theme="dark" hideProgressBar={true} />
         </Container>
