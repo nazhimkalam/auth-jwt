@@ -2,6 +2,8 @@
 
 * This repo contains code for both authentication and authorization.
 
+* This template can be reused for any project that needs to authenticate users etc...
+
 * Both the frontend and backend are available using javascript.
 
 * Authentication is done using [passport.js](http://www.passportjs.org/) and Authorization is done using [JWT](https://jwt.io/).
