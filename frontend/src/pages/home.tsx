@@ -16,6 +16,7 @@ const Home = () => {
   const [registeredUsers, setRegisteredUsers] = useState<User[]>([]);
   const notify = (message: string) => toast(message);
   const navigate = useNavigate();
+  const [isError, setIsError] = useState<boolean>(false);
 
   useEffect(() => {
     axios
@@ -25,6 +26,7 @@ const Home = () => {
       })
       .catch((error) => {
         notify(error.message);
+        setIsError(true);
       });
   }, []);
 
@@ -45,21 +47,33 @@ const Home = () => {
       });
   };
 
+  const navigateToLogin = () => {
+    navigate("/login");
+  }
+
   return (
     <Container>
       <section>
-        <h1>Welcome to the Homepage</h1>
-        <button onClick={onHandleLogout}>logout</button>
+       {!isError ? (
+         <>
+           <h1>Welcome to the Homepage</h1>
+          <button onClick={onHandleLogout}>logout</button>
+         </>
+       ):(
+        <button onClick={navigateToLogin}>Click to login first</button>
+       )}
       </section>
-      <main>
-        <h4>Here are the list of registered users</h4>
-        {registeredUsers.map((user) => (
-          <div key={user.id}>
-            <p>Name: {user.name}</p>
-            <p>Email: {user.email}</p>
-          </div>
-        ))}
-      </main>
+      {!isError && (
+        <main>
+          <h4>Here are the list of registered users</h4>
+          {registeredUsers.map((user) => (
+            <div key={user.id}>
+              <p>Name: {user.name}</p>
+              <p>Email: {user.email}</p>
+            </div>
+          ))}
+       </main>
+      )}
       <ToastContainer theme="dark" hideProgressBar={true} />
     </Container>
   );
@@ -80,6 +94,7 @@ const Container = styled.div`
       border: 1px solid black;
       padding: 10px;
       border-radius: 5px;
+      cursor: pointer;
     }
   }
 
