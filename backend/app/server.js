@@ -88,6 +88,24 @@ app.post('/login', passport.authenticate('local'), (req, res) => {
 	res.status(http.StatusCodes.OK).json({ name: user.name, email: user.email, accessToken: accessToken, refreshToken: refreshToken, expiresAt: 10000 });
 });
 
+app.put("/change-password", authenticateToken, (req, res) => {
+	const email = req.body.email;
+	const password = req.body.password;
+	const user = getUsers().find((user) => user.email === email);
+	
+	if(!user) {
+		res.status(http.StatusCodes.NOT_FOUND).json({ message: 'User not found' });
+		return;
+	}
+	
+	bcrypt.hash(password, 10).then((hashedPassword) => {
+		user.password = hashedPassword;
+		res.status(http.StatusCodes.OK).json({ message: 'Password change successful' });
+	}).catch(() => {
+		res.status(http.StatusCodes.INTERNAL_SERVER_ERROR).json({ message: 'Password change failed!' });
+	});
+});
+
 app.delete('/logout', (req, res) => {
 	req.logOut();  
 	refreshTokens = refreshTokens.filter((token) => token !== req.body.token);
